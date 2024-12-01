@@ -231,17 +231,15 @@ def detect_language(text: str) -> str:
             count_de += 1
 
     counts = [count_en, count_fr, count_es, count_de]
-    print(f"Counts: {counts}")
+    # print(f"Counts: {counts}")
     max_count = max(counts)
     if max_count == 0:
         return "en"
     else:
-        test = list(words.keys())[counts.index(max_count)]
-        print(f"Language detected: {test}")
-        return test
+        return list(words.keys())[counts.index(max_count)]
 
 
-def extract(email: str, def_words=None) -> np.array:
+def extract_1d(email: str, def_words=None) -> np.array:
     """
     Predict if email is spam or not
     """
@@ -252,21 +250,23 @@ def extract(email: str, def_words=None) -> np.array:
     else: 
         def_words = words["en"]
     features = extract_features(email, def_words)
-    features = np.array(features).reshape(1, -1)
-    print("Features extracted")
     return features
+
+def extract_2d(email: str, def_words=None) -> np.array:
+    """
+    Predict if email is spam or not
+    """
+    if def_words is None: 
+        language = detect_language(email) 
+    if language != "en": 
+        def_words = words[language] 
+    else: 
+        def_words = words["en"]
+    features = extract_features(email, def_words)
+    return features.reshape(1, -1)
 
 
 def extract_features(email, words) -> np.array:
-    """
-    Extract features from email
-    48 attributes of frequency of words = 100 * (number of times word appears in email) / total number of words in email
-    6 attributes of type freq of chars
-    1 capital_run_length_average attributes average length of uninterrupted sequences of capital letters
-    1 capital_run_length_longest length of longest uninterrupted sequence of capital letters
-    1 capital_run_length_total | = sum of length of uninterrupted sequences of capital letters | total number of capital letters in the e-mail
-    1 nominal {0,1} spam (1) or not (0),
-    """
     count_words = len(email.split())
     count_chr = len(email)
     features_vector = np.zeros(57)
@@ -274,11 +274,15 @@ def extract_features(email, words) -> np.array:
     # 48 Features
     for i, word in enumerate(words):
         word = word.lower()
-        features_vector[i] = 100 * (email.count(word) / count_words)
+        features_vector[i] = (
+            100 * (email.count(word) / count_words) if count_words > 0 else 0
+        )
 
     # 6 Features
     for i, char in enumerate(characters, start=len(words)):
-        features_vector[i] = 100 * (email.count(char) / count_chr)
+        features_vector[i] = (
+            100 * (email.count(char) / count_chr) if count_chr > 0 else 0
+        )
 
     # Capitals
     capitals = re.findall(r"[A-Z]+", email)
