@@ -237,6 +237,12 @@ def detect_language(text: str) -> str:
         return "en"
     else:
         return list(words.keys())[counts.index(max_count)]
+    
+def prioritize_features(features): 
+    """ Multiplie les 9 dernières features par un facteur pour les prioriser. """ 
+    priority_factor = 2
+    features[:, -9:] *= priority_factor 
+    return features
 
 
 def extract_1d(email: str, def_words=None) -> np.array:
